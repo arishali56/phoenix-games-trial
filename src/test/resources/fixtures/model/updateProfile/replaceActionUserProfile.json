@@ -1,0 +1,8 @@
+{
+  "userId": "existing-user-id",
+  "latestUpdateTime": "${json-unit.any-string}",
+  "userProfileProperties": {
+    "currentGold": 500,
+    "currentGems": 800
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "userId": "existing-user-id",
+  "latestUpdateTime": "${json-unit.any-string}",
+  "userProfileProperties": {
+    "battleFought": 10,
+    "questsNotCompleted": -1
+  }
+}
