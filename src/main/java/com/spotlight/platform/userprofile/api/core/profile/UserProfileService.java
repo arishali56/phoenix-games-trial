@@ -8,6 +8,7 @@ import com.spotlight.platform.userprofile.api.model.profile.UserProfile;
 import com.spotlight.platform.userprofile.api.model.profile.entities.Action;
 import com.spotlight.platform.userprofile.api.model.profile.primitives.UserId;
 import com.spotlight.platform.userprofile.api.model.profile.primitives.UserProfilePropertyValue;
+import com.spotlight.platform.userprofile.api.model.profile.supportedActions.ProfileActions;
 
 import javax.inject.Inject;
 import java.time.Instant;
@@ -32,22 +33,23 @@ public class UserProfileService {
         } else {
             userProfile = userProfileDao.get(userId).get();
         }
-
         switch (action.type()) {
-            case "replace" -> action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
-                userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
-            });
-            case "increment" -> action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
-                if (!userProfilePropertyValue.getValue().getClass().equals(Integer.class)) {
-                    throw new InvalidParameterTypeException();
-                }
-                if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
-                    userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString())));
-                } else {
-                    userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
-                }
-            });
-            case "collect" -> {
+            case ProfileActions.REPLACE ->
+                    action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
+                        userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
+                    });
+            case ProfileActions.INCREMENT ->
+                    action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
+                        if (!userProfilePropertyValue.getValue().getClass().equals(Integer.class)) {
+                            throw new InvalidParameterTypeException();
+                        }
+                        if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
+                            userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString())));
+                        } else {
+                            userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
+                        }
+                    });
+            case ProfileActions.COLLECT -> {
                 action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
                     if (userProfilePropertyValue.getValue().equals(ArrayList.class)) {
                         throw new InvalidParameterTypeException();
