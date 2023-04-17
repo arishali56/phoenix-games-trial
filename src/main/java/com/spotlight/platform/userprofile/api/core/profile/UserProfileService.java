@@ -2,6 +2,7 @@ package com.spotlight.platform.userprofile.api.core.profile;
 
 import com.spotlight.platform.userprofile.api.core.exceptions.EntityNotFoundException;
 import com.spotlight.platform.userprofile.api.core.exceptions.InvalidParameterTypeException;
+import com.spotlight.platform.userprofile.api.core.exceptions.UnsupportedActionException;
 import com.spotlight.platform.userprofile.api.core.profile.persistence.UserProfileDao;
 import com.spotlight.platform.userprofile.api.model.profile.UserProfile;
 import com.spotlight.platform.userprofile.api.model.profile.entities.Action;
@@ -33,23 +34,19 @@ public class UserProfileService {
         }
 
         switch (action.type()) {
-            case "replace" -> {
-                action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
+            case "replace" -> action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
+                userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
+            });
+            case "increment" -> action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
+                if (!userProfilePropertyValue.getValue().getClass().equals(Integer.class)) {
+                    throw new InvalidParameterTypeException();
+                }
+                if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
+                    userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString())));
+                } else {
                     userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
-                });
-            }
-            case "increment" -> {
-                action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
-                    if (!userProfilePropertyValue.getValue().getClass().equals(Integer.class)) {
-                        throw new InvalidParameterTypeException();
-                    }
-                    if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
-                        userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString())));
-                    } else {
-                        userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
-                    }
-                });
-            }
+                }
+            });
             case "collect" -> {
                 action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
                     if (userProfilePropertyValue.getValue().equals(ArrayList.class)) {
@@ -72,7 +69,7 @@ public class UserProfileService {
                 });
             }
 
-            //default
+            default -> throw new UnsupportedActionException();
         }
         userProfileDao.put(new UserProfile(userId, Instant.now(), userProfile.userProfileProperties()));
         return userProfileDao.get(userId).get();
