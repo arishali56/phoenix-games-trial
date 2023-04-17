@@ -1,0 +1,8 @@
+{
+  "userId": "existing-user-id",
+  "latestUpdateTime": "${json-unit.any-string}",
+  "userProfileProperties": {
+    "inventory": ["armor1","armor2","sword1", "sword2", "shield1"],
+    "tools": ["tool1", "tool2"]
+  }
+}

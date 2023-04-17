@@ -7,6 +7,7 @@ import com.spotlight.platform.userprofile.api.core.profile.persistence.UserProfi
 import com.spotlight.platform.userprofile.api.model.profile.UserProfile;
 import com.spotlight.platform.userprofile.api.model.profile.entities.Action;
 import com.spotlight.platform.userprofile.api.model.profile.primitives.UserId;
+import com.spotlight.platform.userprofile.api.model.profile.primitives.UserProfilePropertyName;
 import com.spotlight.platform.userprofile.api.model.profile.primitives.UserProfilePropertyValue;
 import com.spotlight.platform.userprofile.api.model.profile.supportedActions.ProfileActions;
 
@@ -28,36 +29,36 @@ public class UserProfileService {
 
     public UserProfile performAction(UserId userId, Action action) {
         UserProfile userProfile;
+        Map<UserProfilePropertyName, UserProfilePropertyValue> properties; //= new HashMap<>();
         if (userProfileDao.get(userId).isEmpty()) {
-            userProfile = new UserProfile(userId, Instant.now(), new HashMap<>());
+            properties = new HashMap<>();
         } else {
-            userProfile = new UserProfile(userId, Instant.now(), userProfileDao.get(userId).get().userProfileProperties());
-
+            properties = new HashMap<>(userProfileDao.get(userId).get().userProfileProperties());
         }
         switch (action.type()) {
             case ProfileActions.REPLACE ->
                     action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
-                        userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
+                        properties.put(userProfilePropertyName, userProfilePropertyValue);
                     });
             case ProfileActions.INCREMENT ->
                     action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
                         if (!userProfilePropertyValue.getValue().getClass().equals(Integer.class)) {
                             throw new InvalidParameterTypeException();
                         }
-                        if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
-                            UserProfilePropertyValue incrementedValue = UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString()));
-                            userProfile.userProfileProperties().put(userProfilePropertyName, incrementedValue);
+                        if (properties.containsKey(userProfilePropertyName)) {
+                            UserProfilePropertyValue incrementedValue = UserProfilePropertyValue.valueOf(Integer.parseInt(properties.get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString()));
+                            properties.put(userProfilePropertyName, incrementedValue);
                         } else {
-                            userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
+                            properties.put(userProfilePropertyName, userProfilePropertyValue);
                         }
                     });
             case ProfileActions.COLLECT -> {
                 action.properties().forEach((userProfilePropertyName, userProfilePropertyValue) -> {
-                    if (userProfilePropertyValue.getValue().equals(ArrayList.class)) {
+                    if (!userProfilePropertyValue.getValue().getClass().equals(ArrayList.class)) {
                         throw new InvalidParameterTypeException();
                     }
-                    if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
-                        UserProfilePropertyValue value = userProfile.userProfileProperties().get(userProfilePropertyName);
+                    if (properties.containsKey(userProfilePropertyName)) {
+                        UserProfilePropertyValue value = properties.get(userProfilePropertyName);
 
                         List<Object> valueAsList = new ArrayList<>((Collection<?>) value.getValue());
                         List<Object> argumentAsList = new ArrayList<>((Collection<?>) userProfilePropertyValue.getValue());
@@ -66,15 +67,16 @@ public class UserProfileService {
                                 valueAsList.add(o);
                             }
                         });
-                        userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(valueAsList));
+                        properties.put(userProfilePropertyName, UserProfilePropertyValue.valueOf(valueAsList));
                     } else {
-                        userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
+                        properties.put(userProfilePropertyName, userProfilePropertyValue);
                     }
                 });
             }
 
             default -> throw new UnsupportedActionException();
         }
+        userProfile = new UserProfile(userId, Instant.now(), properties);
         userProfileDao.put(userProfile);
         return userProfile;
     }

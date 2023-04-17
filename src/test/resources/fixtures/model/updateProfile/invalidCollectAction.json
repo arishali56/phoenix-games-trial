@@ -1,0 +1,7 @@
+{
+  "type": "collect",
+  "properties": {
+    "inventory": "abc",
+    "tools": "xyz"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "type": "increment",
+  "properties": {
+    "battleFought": "abc",
+    "questsNotCompleted": "xyz"
+  }
+}
