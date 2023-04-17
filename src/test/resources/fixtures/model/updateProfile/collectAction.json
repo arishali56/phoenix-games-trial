@@ -1,0 +1,7 @@
+{
+  "type": "collect",
+  "properties": {
+    "inventory": ["sword1", "sword2", "shield1"],
+    "tools": ["tool1", "tool2"]
+  }
+}

@@ -24,6 +24,9 @@ import java.util.Optional;
 import ru.vyarus.dropwizard.guice.test.ClientSupport;
 import ru.vyarus.dropwizard.guice.test.jupiter.ext.TestDropwizardAppExtension;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.GenericEntity;
+
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -95,5 +98,74 @@ class UserResourceIntegrationTest {
 
             assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
+    }
+    @Nested
+    @DisplayName("updateUserProfile")
+    class UpdateUserProfile {
+        private static final String USER_ID_PATH_PARAM = "userId";
+        private static final String URL = "/users/{%s}/update-profile".formatted(USER_ID_PATH_PARAM);
+
+        //test valid actions
+        @Test
+        void replaceAction_correctObjectIsReturn (ClientSupport client) {
+            var response = client.targetRest()
+                    .path(URL)
+                    .resolveTemplate(USER_ID_PATH_PARAM, UserProfileFixtures.USER_ID)
+                    .request()
+                    .post(Entity.json(UserProfileFixtures.SERIALIZED_REPLACE_ACTION));
+            System.out.println("response.getStatus()");
+            System.out.println(response.getStatus());
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.OK_200);
+            //assertThatJson(response.readEntity(UserProfile.class)).isEqualTo(UserProfileFixtures.SERIALIZED_USER_PROFILE);
+        }
+
+        @Test
+        void collectAction_correctObjectIsReturn (ClientSupport client) {
+            var response = client.targetRest()
+                    .path(URL)
+                    .resolveTemplate(USER_ID_PATH_PARAM, UserProfileFixtures.USER_ID)
+                    .request()
+                    .post(Entity.json(UserProfileFixtures.SERIALIZED_COLLECT_ACTION));
+
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.OK_200);
+            //assertThatJson(response.readEntity(UserProfile.class)).isEqualTo(UserProfileFixtures.SERIALIZED_USER_PROFILE);
+        }
+
+        @Test
+        void incrementAction_correctObjectIsReturn (ClientSupport client) {
+            var response = client.targetRest()
+                    .path(URL)
+                    .resolveTemplate(USER_ID_PATH_PARAM, UserProfileFixtures.USER_ID)
+                    .request()
+                    .post(Entity.json(UserProfileFixtures.SERIALIZED_INCREMENT_ACTION));
+
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.OK_200);
+            //assertThatJson(response.readEntity(UserProfile.class)).isEqualTo(UserProfileFixtures.SERIALIZED_USER_PROFILE);
+        }
+
+        @Test
+        void incrementActionExistingProperty_correctObjectIsReturn (ClientSupport client, UserProfileDao userProfileDao) {
+            when(userProfileDao.get(any(UserId.class))).thenReturn(Optional.of(UserProfileFixtures.USER_PROFILE_NUMERICAL_PROPERTY));
+            var response = client.targetRest()
+                    .path(URL)
+                    .resolveTemplate(USER_ID_PATH_PARAM, UserProfileFixtures.USER_ID)
+                    .request()
+                    .post(Entity.json(UserProfileFixtures.SERIALIZED_INCREMENT_ACTION));
+
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.OK_200);
+            //assertThatJson(response.readEntity(UserProfile.class)).isEqualTo(UserProfileFixtures.SERIALIZED_USER_PROFILE);
+        }
+        //test invalid action
+        @Test
+        void unsupportedAction_returns400 (ClientSupport client) {
+            var response = client.targetRest()
+                    .path(URL)
+                    .resolveTemplate(USER_ID_PATH_PARAM, UserProfileFixtures.USER_ID)
+                    .request()
+                    .post(Entity.json(UserProfileFixtures.SERIALIZED_INVALID_ACTION));
+
+            assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST_400);
+        }
+
     }
 }

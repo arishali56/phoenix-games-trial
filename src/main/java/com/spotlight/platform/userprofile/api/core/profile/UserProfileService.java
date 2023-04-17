@@ -31,7 +31,8 @@ public class UserProfileService {
         if (userProfileDao.get(userId).isEmpty()) {
             userProfile = new UserProfile(userId, Instant.now(), new HashMap<>());
         } else {
-            userProfile = userProfileDao.get(userId).get();
+            userProfile = new UserProfile(userId, Instant.now(), userProfileDao.get(userId).get().userProfileProperties());
+
         }
         switch (action.type()) {
             case ProfileActions.REPLACE ->
@@ -44,7 +45,8 @@ public class UserProfileService {
                             throw new InvalidParameterTypeException();
                         }
                         if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
-                            userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString())));
+                            UserProfilePropertyValue incrementedValue = UserProfilePropertyValue.valueOf(Integer.parseInt(userProfile.userProfileProperties().get(userProfilePropertyName).getValue().toString()) + Integer.parseInt(userProfilePropertyValue.getValue().toString()));
+                            userProfile.userProfileProperties().put(userProfilePropertyName, incrementedValue);
                         } else {
                             userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
                         }
@@ -57,14 +59,14 @@ public class UserProfileService {
                     if (userProfile.userProfileProperties().containsKey(userProfilePropertyName)) {
                         UserProfilePropertyValue value = userProfile.userProfileProperties().get(userProfilePropertyName);
 
-                        List<Object> valueAsArray = new ArrayList<>((Collection<?>) value.getValue());
-                        List<Object> argumentAsArray = new ArrayList<>((Collection<?>) userProfilePropertyValue.getValue());
-                        argumentAsArray.forEach(o -> {
-                            if (valueAsArray.stream().noneMatch(o::equals)) {
-                                valueAsArray.add(o);
+                        List<Object> valueAsList = new ArrayList<>((Collection<?>) value.getValue());
+                        List<Object> argumentAsList = new ArrayList<>((Collection<?>) userProfilePropertyValue.getValue());
+                        argumentAsList.forEach(o -> {
+                            if (valueAsList.stream().noneMatch(o::equals)) {
+                                valueAsList.add(o);
                             }
                         });
-                        userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(valueAsArray));
+                        userProfile.userProfileProperties().put(userProfilePropertyName, UserProfilePropertyValue.valueOf(valueAsList));
                     } else {
                         userProfile.userProfileProperties().put(userProfilePropertyName, userProfilePropertyValue);
                     }
@@ -73,7 +75,7 @@ public class UserProfileService {
 
             default -> throw new UnsupportedActionException();
         }
-        userProfileDao.put(new UserProfile(userId, Instant.now(), userProfile.userProfileProperties()));
-        return userProfileDao.get(userId).get();
+        userProfileDao.put(userProfile);
+        return userProfile;
     }
 }

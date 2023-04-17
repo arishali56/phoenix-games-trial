@@ -1,0 +1,7 @@
+{
+  "type": "replace",
+  "properties": {
+    "currentGold": 500,
+    "currentGems": 800
+  }
+}
